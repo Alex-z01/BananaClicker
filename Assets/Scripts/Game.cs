@@ -5,6 +5,11 @@ using UnityEngine.Events;
 
 public class Game : MonoBehaviour
 {
+    /// <summary>
+    /// Total time played in seconds
+    /// </summary>
+    public float timePlayed;
+
     [SerializeField]
     private BucketNumber _bananaCount;
     public BucketNumber BananaCount
@@ -48,17 +53,26 @@ public class Game : MonoBehaviour
 
     public UnityEvent HandleBoughtEvent;
 
+    public Dictionary<string, Unlockable> unlockables = new Dictionary<string, Unlockable>();
+
     private void Start()
     {
         InvokeRepeating("IdleIncome", 1, 1);
+        InvokeRepeating("TimePlayed", 1, 1);
+        InvokeRepeating("CheckUnlockables", 1, 10);
         StartCoroutine(CClimb());
         DisplayBananaCount = BananaCount
     }
 
-    public void IdleIncome()
+    private void TimePlayed()
+    {
+        timePlayed++;
+    }
+
+    private void IdleIncome()
     {
         if(BananasPerSecond > BucketNumber.Zero) {
-            BananaCount += BananasPerSecond * Calculations.BlackBananaBonus;
+            BananaCount += BananasPerSecond;
         }   
     }
 
@@ -81,7 +95,7 @@ public class Game : MonoBehaviour
         if (upgradeData.unlockRequirements.Count == 0) { upgrades[upgradeData.upgradeName].unlocked = true; return true; }
 
         // Check each requirement to unlock this upgrade
-        foreach (UnlockRequirement req in upgradeData.unlockRequirements)
+        foreach (UpgradeUnlockRequirement req in upgradeData.unlockRequirements)
         {
             // If any requirement is not met, the upgrade has not been unlocked
             if (upgrades[req.upgradeName].count < req.count)
@@ -97,7 +111,18 @@ public class Game : MonoBehaviour
     public void HandleUpgradeBought()
     {
         BananasPerSecond = Calculations.PerSecondValue;
-    }
+    }  
 
+    /// <summary>
+    /// Go through all locked upgrades and check their requirements to see if theyve been met.
+    /// Unlockable class handles the actual changing of lock state
+    /// </summary>
+    public void CheckUnlockables()
+    {
+        foreach(KeyValuePair<string, Unlockable> pair in unlockables)
+        {
+            if(!pair.Value.IsUnlocked) { pair.Value.CheckUnlockRequirements(); }
+        }
+    }
 
 }
