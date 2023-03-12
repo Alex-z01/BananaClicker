@@ -18,7 +18,7 @@ public class UpgradeScriptableObject : ScriptableObject
     public BucketNumber basePrice, priceIncrease;
     public BucketNumber maxAmount;
     public bool defaultUnlocked;
-    public List<UnlockRequirement> unlockRequirements;
+    public List<UpgradeUnlockRequirement> unlockRequirements;
 
     [Space(5)]
     [Header("Active")]
@@ -40,7 +40,7 @@ public class UpgradeScriptableObject : ScriptableObject
 }
 
 [Serializable]
-public class UnlockRequirement
+public class UpgradeUnlockRequirement
 {
     public string upgradeName;
 

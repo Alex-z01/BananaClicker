@@ -7,8 +7,14 @@ public class BalloonSystem : MonoBehaviour
 
     private const float delayTime = 0.4f;
     public float swarmSpawnTime;
+    public bool balloonsUnlocked;
     public int balloonCount;
     public float balloonRewardChance;
+
+    private void Start()
+    {
+        SpawnBalloon();
+    }
 
     public void SpawnBalloon()
     {
@@ -17,6 +23,7 @@ public class BalloonSystem : MonoBehaviour
 
     IEnumerator CBalloonSpawn()
     {
+        yield return new WaitUntil(() => balloonsUnlocked);
         float swarmTimer = 0;
         float delayTimer = 0;
         int count = 0;

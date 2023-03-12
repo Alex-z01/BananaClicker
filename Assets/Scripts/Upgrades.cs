@@ -43,19 +43,19 @@ public class Upgrades : MonoBehaviour
             switch (pair.Value.upgradeType)
             {
                 case UpgradeScriptableObject.UpgradeType.Active:
-                    entry = Instantiate(pair.Value.entryPrefab, uIController.activeUpgradeContainer);
+                    entry = Instantiate(pair.Value.entryPrefab, uIController.upgradeContainers[0]);
                     break;
 
                 case UpgradeScriptableObject.UpgradeType.Idle:
-                    entry = Instantiate(pair.Value.entryPrefab, uIController.idleUpgradeContainer);
+                    entry = Instantiate(pair.Value.entryPrefab, uIController.upgradeContainers[1]);
                     break;
 
                 case UpgradeScriptableObject.UpgradeType.Stat:
-                    entry = Instantiate(pair.Value.entryPrefab, uIController.statUpgradeContianer);
+                    entry = Instantiate(pair.Value.entryPrefab, uIController.upgradeContainers[2]);
                     break;
 
                 case UpgradeScriptableObject.UpgradeType.Buff:
-                    entry = Instantiate(pair.Value.entryPrefab, uIController.buffUpgradeContainer);
+                    entry = Instantiate(pair.Value.entryPrefab, uIController.upgradeContainers[3]);
                     break;
 
             }

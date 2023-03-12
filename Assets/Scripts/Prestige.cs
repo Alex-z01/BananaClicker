@@ -66,6 +66,8 @@ public class Prestige : MonoBehaviour
         BlackBananas += Calculations.MaxBlackBananas;
 
         game.upgrades = Manager.Instance.dataManager.InitializeUpgrades();
+        game.unlockables = Manager.Instance.dataManager.InitializeUnlockables();
+
         game.BananaCount = BucketNumber.Zero;
         game.BananasPerSecond = BucketNumber.Zero;
         game.DisplayBananaCount = BucketNumber.Zero;

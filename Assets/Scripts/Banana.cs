@@ -43,7 +43,7 @@ public class Banana : MonoBehaviour
     {
         BucketNumber blackBananaBonus = Calculations.BlackBananaBonus;
         BucketNumber critMultiplier = Calculations.CritMultiplier;
-        BucketNumber finalClickValue = BananaClickValue * blackBananaBonus * critMultiplier;
+        BucketNumber finalClickValue = BananaClickValue * critMultiplier;
 
         //print($"{BananaClickValue} {blackBananaBonus} {critMultiplier}");
 

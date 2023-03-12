@@ -30,6 +30,7 @@ public class Manager : MonoBehaviour
     public CrateSystem crateSystem;
     public DataManager dataManager;
     public Game game;
+    public Gear gear;
     public Prestige prestige;
     public Upgrades upgrades;
     public UIController uIController;

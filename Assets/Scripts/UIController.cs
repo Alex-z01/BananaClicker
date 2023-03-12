@@ -46,10 +46,8 @@ public class UIController : MonoBehaviour
     public TMP_Text critChanceText, critMultiplierText;
     public TMP_Text totalPrestigesText, prestigeBonusText;
 
-    public Transform activeUpgradeContainer;
-    public Transform idleUpgradeContainer;
-    public Transform statUpgradeContianer;
-    public Transform buffUpgradeContainer;
+    public List<Transform> shopTabs;
+    public List<Transform> upgradeContainers;
 
     public Transform HUD;
 
@@ -59,13 +57,13 @@ public class UIController : MonoBehaviour
     public Layout previousLayout, currentLayout;
     public List<Layout> layoutList;
 
-    public List<AudioClip> audioClips;
     private AudioSource audioSource;
 
     private Game game;
     private Banana banana;
     private Prestige prestige;
     private DataManager dataManager;
+    private AudioControl audioControl;
 
     private void Start()
     {
@@ -75,6 +73,7 @@ public class UIController : MonoBehaviour
         banana = Manager.Instance.banana;
         prestige = Manager.Instance.prestige;
         dataManager = Manager.Instance.dataManager;
+        audioControl = Manager.Instance.audioControl;
 
         foreach(Layout layout in layoutList) 
         {
@@ -142,17 +141,70 @@ public class UIController : MonoBehaviour
             }
         });
 
-        audioSource.PlayOneShot(audioClips[0]);
+        audioSource.PlayOneShot(audioControl.UI_Clips[2]);
+    }
+
+    public void ShopTab(int index)
+    {
+        switch (index)
+        {
+            case 0: // Actives
+                if (!Stats.ActiveUnlocked)
+                {
+                    shopTabs[index].GetComponent<UiUtility>().Shake(0.5f, 1, shopTabs[index].transform.localPosition);
+                    GetComponent<AudioSource>().PlayOneShot(audioControl.UI_Clips[1]);
+                    return;
+                }
+                break; 
+            
+            case 1: // Idle
+                if (!Stats.IdleUnlocked) 
+                {
+                    shopTabs[index].GetComponent<UiUtility>().Shake(0.5f, 1, shopTabs[index].transform.localPosition);
+                    GetComponent<AudioSource>().PlayOneShot(audioControl.UI_Clips[1]);
+                    return;
+                }
+                break;
+
+            case 2:
+                if (!Stats.StatUnlocked)
+                {
+                    shopTabs[index].GetComponent<UiUtility>().Shake(0.5f, 1, shopTabs[index].transform.localPosition);
+                    GetComponent<AudioSource>().PlayOneShot(audioControl.UI_Clips[1]);
+                    return;
+                }
+                break;
+
+            case 3:
+                if (!Stats.BuffUnlocked)
+                {
+                    shopTabs[index].GetComponent<UiUtility>().Shake(0.5f, 1, shopTabs[index].transform.localPosition);
+                    GetComponent<AudioSource>().PlayOneShot(audioControl.UI_Clips[1]);
+                    return;
+                }
+                break;
+
+        }
+
+        foreach (Transform tab in upgradeContainers)
+        {
+            tab.gameObject.SetActive(false);
+        }
+        upgradeContainers[index].gameObject.SetActive(true);
     }
 
     public void SoftRefreshAllUpgrades()
     {
-        foreach(Transform child in activeUpgradeContainer)
+        foreach(Transform tab in upgradeContainers)
         {
-            if(child.GetComponent<UpgradePrefab>() != null)
+            foreach(Transform child in tab)
             {
-                child.GetComponent<UpgradePrefab>().CostRefresh();
+                if (child.GetComponent<UpgradePrefab>() != null)
+                {
+                    child.GetComponent<UpgradePrefab>().CostRefresh();
+                }
             }
+
         }
     }
 
@@ -181,6 +233,6 @@ public class UIController : MonoBehaviour
         critMultiplierText.text = "Crit Multiplier: " + $"({banana.critMultiplierRange.x}x, {banana.critMultiplierRange.y}x)";
 
         totalPrestigesText.text = "Total Prestiges: " + prestige.totalPrestiges.ToString("##,##0");
-        prestigeBonusText.text = "Prestige Bonus: " + $"{prestige.BlackBananas.GetValue() * 0.05f}%";
+        prestigeBonusText.text = "Prestige Bonus: " + $"{prestige.BlackBananas.GetValue() * 0.15f}%";
     }
 }

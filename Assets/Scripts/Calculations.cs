@@ -27,10 +27,6 @@ public class Calculations
             return GetBaseClickValue();
         }
     }
-    public static BucketNumber FinalOnClickValue
-    {
-        get { return GetFinalClickValue(); }
-    }
     public static BucketNumber PerSecondValue
     {
         get
@@ -58,7 +54,7 @@ public class Calculations
 
     private static BucketNumber GetBlackBananaBonus()
     {
-        BucketNumber bonus = Manager.Instance.prestige.BlackBananas * 0.05f / 100f + 1f;
+        BucketNumber bonus = Manager.Instance.prestige.BlackBananas * 0.15f / 100f + 1f;
 
         return bonus;
     }
@@ -70,6 +66,7 @@ public class Calculations
         return baseValue;
     }
 
+    /*
     private static BucketNumber GetFinalClickValue()
     {
         BucketNumber blackBananaBonus = BlackBananaBonus;
@@ -77,6 +74,7 @@ public class Calculations
 
         return BaseOnClickValue * blackBananaBonus * crit;
     }
+    */
 
     private static BucketNumber RollCrit()
     {
@@ -166,7 +164,7 @@ public class Calculations
         IdleUpgrade idleUpgrade = (IdleUpgrade)Manager.Instance.game.upgrades[key];
 
         BucketNumber count = idleUpgrade.count;
-        BucketNumber value = idleUpgrade.basePerSecondValue;
+        BucketNumber value = idleUpgrade.basePerSecondValue * BlackBananaBonus;
 
         // Calculate all upgrade targetted buffs
         value = ApplyBuffs(value);
@@ -198,7 +196,7 @@ public class Calculations
         ActiveUpgrade activeUpgrade = (ActiveUpgrade)Manager.Instance.game.upgrades[key];
 
         BucketNumber count = activeUpgrade.count;
-        BucketNumber value = activeUpgrade.basePerClickValue;
+        BucketNumber value = activeUpgrade.basePerClickValue * BlackBananaBonus;
 
         // Calculate all upgrade targetted buffs
         value = ApplyBuffs(value);
@@ -247,7 +245,7 @@ public class Calculations
 
     private static BucketNumber GetPeelReward()
     {
-        BucketNumber reward = Manager.Instance.banana.PeelThreshold * FinalOnClickValue * 2f;
+        BucketNumber reward = Manager.Instance.banana.PeelThreshold * BaseOnClickValue * CritMultiplier * 2f;
 
         return reward;
     }
@@ -260,13 +258,16 @@ public class Calculations
         if(random <= Manager.Instance.balloonSystem.balloonRewardChance)
         {
             List<string> upgradesAsList = Manager.Instance.game.upgrades
-                .Where(pair => pair.Value.unlocked == true)
+                .Where(pair => pair.Value.unlocked == true 
+                                && pair.Value.stat != Stats.StatType.CrateUnlock
+                                && pair.Value.stat != Stats.StatType.BalloonUnlock)
                 .Select(pair => pair.Key)
                 .ToList();
 
             int randomIndex = Random.Range(0, upgradesAsList.Count);
             string randomUpgrade = upgradesAsList[randomIndex];
 
+            Debug.Log(randomUpgrade);
             return randomUpgrade;
         }
         return null;
