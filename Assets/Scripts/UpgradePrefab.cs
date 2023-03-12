@@ -51,10 +51,7 @@ public class UpgradePrefab : MonoBehaviour
 
     private void OnEnable()
     {
-        if (Unlocked)
-        {
-            RefreshUI();
-        }
+        Unlocked = Manager.Instance.game.CheckUnlockRequirements(upgradeData);
     }
 
     private void CalculateScalingValues()
@@ -93,19 +90,19 @@ public class UpgradePrefab : MonoBehaviour
         switch(upgradeData.upgradeType)
         {
             case UpgradeScriptableObject.UpgradeType.Active:
-                upgradeDescText.text = $"{upgradeData.upgradeDescription} +{Calculations.ApplyBuffs(upgradeData.basePerClickValue)} bananas/sec";
+                upgradeDescText.text = $"{upgradeData.upgradeDescription} +{Calculations.ApplyBuffs(upgradeData.basePerClickValue)*Calculations.BlackBananaBonus} bananas/sec";
                 break;
 
             case UpgradeScriptableObject.UpgradeType.Idle:
-                upgradeDescText.text = $"{upgradeData.upgradeDescription} +{Calculations.ApplyBuffs(upgradeData.basePerSecondValue)} bananas/click";
+                upgradeDescText.text = $"{upgradeData.upgradeDescription} +{Calculations.ApplyBuffs(upgradeData.basePerSecondValue) * Calculations.BlackBananaBonus} bananas/click";
                 break;
 
             case UpgradeScriptableObject.UpgradeType.Stat:
-                upgradeDescText.text = $"{upgradeData.upgradeDescription} +{upgradeData.statChange}% {upgradeData.statType.ToString()}";
+                upgradeDescText.text = $"{upgradeData.upgradeDescription} +{upgradeData.statChange * Calculations.BlackBananaBonus}% {upgradeData.statType.ToString()}";
                 break;
 
             case UpgradeScriptableObject.UpgradeType.Buff:
-                upgradeDescText.text = $"{upgradeData.upgradeDescription} {upgradeData.buffValue}%";
+                upgradeDescText.text = $"{upgradeData.upgradeDescription} {upgradeData.buffValue * Calculations.BlackBananaBonus}%";
                 break;
 
             default:
