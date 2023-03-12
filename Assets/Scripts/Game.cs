@@ -52,7 +52,7 @@ public class Game : MonoBehaviour
     {
         InvokeRepeating("IdleIncome", 1, 1);
         StartCoroutine(CClimb());
-        DisplayBananaCount = BananaCount;
+        DisplayBananaCount = BananaCount
     }
 
     public void IdleIncome()
