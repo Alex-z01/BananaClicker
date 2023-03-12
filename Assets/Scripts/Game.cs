@@ -61,7 +61,7 @@ public class Game : MonoBehaviour
         InvokeRepeating("TimePlayed", 1, 1);
         InvokeRepeating("CheckUnlockables", 1, 10);
         StartCoroutine(CClimb());
-        DisplayBananaCount = BananaCount
+        DisplayBananaCount = BananaCount;
     }
 
     private void TimePlayed()
