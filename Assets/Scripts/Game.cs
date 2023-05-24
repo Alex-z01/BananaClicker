@@ -1,3 +1,5 @@
+using Steamworks;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -51,17 +53,82 @@ public class Game : MonoBehaviour
 
     public Dictionary<string, GenericUpgrade> upgrades = new Dictionary<string, GenericUpgrade>();
 
-    public UnityEvent HandleBoughtEvent;
+    private Gear _gear;
+    private Upgrades _upgrades;
+    private Prestige _prestige;
 
-    public Dictionary<string, Unlockable> unlockables = new Dictionary<string, Unlockable>();
+    public bool crazyCrit;
 
     private void Start()
     {
         InvokeRepeating("IdleIncome", 1, 1);
         InvokeRepeating("TimePlayed", 1, 1);
-        InvokeRepeating("CheckUnlockables", 1, 10);
+        InvokeRepeating("CheckUnlockables", 1, 3);
+        InvokeRepeating("CrazyCrit", Stats.CrazyCritRate, Stats.CrazyCritRate);
         StartCoroutine(CClimb());
         DisplayBananaCount = BananaCount;
+
+        _gear = Manager.Instance.gear;
+        _upgrades = Manager.Instance.upgrades;
+        _prestige = Manager.Instance.prestige;
+
+        Subscriptions();
+    }
+
+    private void CrazyCrit()
+    {
+        crazyCrit = true;
+
+        print(Stats.CrazyCritDuration);
+
+        StartCoroutine(BackgroundGradient());
+    }
+
+    private IEnumerator BackgroundGradient()
+    {
+        float elapsedTime = 0f;
+        float colorTime = 0;
+        Color endColor = Color.red;
+
+        while (elapsedTime < Stats.CrazyCritDuration)
+        {
+            elapsedTime += Time.deltaTime;
+            colorTime += Time.deltaTime * 1.15f;
+
+            Camera.main.backgroundColor = Color.Lerp(Camera.main.backgroundColor, endColor, Time.deltaTime * 1.15f);
+
+            if (colorTime > 0.95f)
+            {
+                colorTime = 0;
+                endColor = UnityEngine.Random.ColorHSV();
+            }
+
+            yield return null;
+        }
+
+        crazyCrit = false;
+
+        elapsedTime = 0f;
+        while (elapsedTime < 1f)
+        {
+            elapsedTime += Time.deltaTime;
+
+            Camera.main.backgroundColor = Color.Lerp(Camera.main.backgroundColor, new Color(0.65f, 0.93f, 0.4f), Time.deltaTime);
+
+            yield return null;
+        }
+    }
+
+    private void Subscriptions()
+    {
+        _gear.EquipSocketChanged += OnItemChange;
+        _upgrades.OnBought += OnUpgradeBought;
+        _prestige.OnPrestige += OnPrestige;
+    }
+
+    private void OnItemChange()
+    {
+        BananasPerSecond = Calculations.PerSecondValue;
     }
 
     private void TimePlayed()
@@ -90,7 +157,7 @@ public class Game : MonoBehaviour
         }
     }
 
-    public bool CheckUnlockRequirements(UpgradeScriptableObject upgradeData)
+    public bool CheckUpgradeUnlockRequirements(UpgradeScriptableObject upgradeData)
     {
         if (upgradeData.unlockRequirements.Count == 0) { upgrades[upgradeData.upgradeName].unlocked = true; return true; }
 
@@ -108,20 +175,29 @@ public class Game : MonoBehaviour
         return true;
     }
 
-    public void HandleUpgradeBought()
+    public void OnUpgradeBought(object sender, EventArgs args)
     {
         BananasPerSecond = Calculations.PerSecondValue;
     }  
 
+    public void OnPrestige(object sender, EventArgs args)
+    {
+        upgrades = Manager.Instance.dataManager.InitializeUpgrades();
+
+        BananaCount = BucketNumber.Zero;
+        DisplayBananaCount = BucketNumber.Zero;
+        BananasPerSecond = BucketNumber.Zero;
+    }
+
     /// <summary>
-    /// Go through all locked upgrades and check their requirements to see if theyve been met.
+    /// Go through all locked unlocks and check their requirements to see if theyve been met.
     /// Unlockable class handles the actual changing of lock state
     /// </summary>
     public void CheckUnlockables()
     {
-        foreach(KeyValuePair<string, Unlockable> pair in unlockables)
+        foreach(KeyValuePair<string, Unlockable> pair in Stats.Unlockables)
         {
-            if(!pair.Value.IsUnlocked) { pair.Value.CheckUnlockRequirements(); }
+            if(!pair.Value.IsUnlocked) { pair.Value.IsUnlocked = pair.Value.CheckUnlockRequirements(); }
         }
     }
 

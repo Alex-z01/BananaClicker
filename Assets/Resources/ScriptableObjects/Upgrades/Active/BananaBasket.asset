@@ -16,13 +16,13 @@ MonoBehaviour:
   entryPrefab: {fileID: 7388310405057505629, guid: 6528e9ddb79c6bf44944ee93deb49847, type: 3}
   id: 2
   upgradeName: Banana Basket
-  upgradeDescription: description
-  sprite: {fileID: 21300000, guid: 76a0e85884ae60e41bcafbc1b0aeb7fb, type: 3}
+  upgradeDescription: The perfect accessory for the stylish banana enthusiast.
+  sprite: {fileID: 11191657, guid: 03f01a2228e1ca64d9313da418eaf04d, type: 3}
   basePrice:
     coefficient: 15
     magnitude: 1
   priceIncrease:
-    coefficient: 1.3
+    coefficient: 1.1
     magnitude: 0
   maxAmount:
     coefficient: -1
@@ -32,7 +32,7 @@ MonoBehaviour:
   - upgradeName: Banana Bundle
     count: 10
   basePerClickValue:
-    coefficient: 25
+    coefficient: 40
     magnitude: 0
   basePerSecondValue:
     coefficient: 0

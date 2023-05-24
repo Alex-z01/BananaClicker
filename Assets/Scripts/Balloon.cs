@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -5,6 +6,18 @@ public class Balloon : MonoBehaviour
 {
     public float time;
     private bool collected;
+
+    private Upgrades _upgrades;
+
+    private void Start()
+    {
+        float lifetime = UnityEngine.Random.Range(4f, 9f);
+
+        _upgrades = Manager.Instance.upgrades;
+
+        GetComponent<UiUtility>().SlideTo(gameObject, new Vector3(transform.localPosition.x, 700f), lifetime);
+        Destroy(gameObject, lifetime);
+    }
 
     public void Collect()
     {
@@ -17,9 +30,7 @@ public class Balloon : MonoBehaviour
             collected = true;
             Manager.Instance.game.upgrades[randomUpgrade].count += 1;
 
-            // TODO change to invoke an event 
-            Manager.Instance.game.HandleUpgradeBought();
-            Manager.Instance.banana.HandleUpgradeBought();
+            _upgrades.RaiseOnBoughtEvent();
 
             print($"Collected balloon, got {randomUpgrade}");
 
@@ -40,11 +51,5 @@ public class Balloon : MonoBehaviour
         Destroy(gameObject, 0.267f);
     }
 
-    private void Start()
-    {
-        float lifetime = Random.Range(4f, 9f);
 
-        GetComponent<UiUtility>().SlideTo(gameObject, new Vector3(transform.localPosition.x, 700f), lifetime);
-        Destroy(gameObject, lifetime);
-    }
 }

@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6102e744de7066a46866277d341ebf42, type: 3}
+  m_Name: Dragon_Wing
+  m_EditorClassIdentifier: Assembly-CSharp::EquippableScriptableObject
+  id: 0
+  Item_Name: Dragon Wing
+  Item_Description: 
+  sprite: {fileID: 55986641, guid: 5068092828a8929479ad885a74b9efae, type: 3}
+  position: {x: 104.8, y: -8.9, z: 0}
+  rotation: {x: 0, y: 0, z: -8}
+  dimensions: {x: 192, y: 192}
+  Socket: 4
+  ValidTiers: 03000000
+  ValidStats: 

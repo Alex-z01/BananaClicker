@@ -54,42 +54,38 @@ public class Calculations
 
     private static BucketNumber GetBlackBananaBonus()
     {
-        BucketNumber bonus = Manager.Instance.prestige.BlackBananas * 0.15f / 100f + 1f;
+        BucketNumber bonus = Manager.Instance.prestige.BlackBananas * 0.25f / 100f + 1f;
 
         return bonus;
     }
 
     private static BucketNumber GetBaseClickValue()
     {
-        BucketNumber baseValue = GetAllStructureClickValue() + 1;
+        BucketNumber baseValue = BlackBananaBonus * 1;
+        BucketNumber structureValues = GetAllStructureClickValue();
 
-        return baseValue;
+        return baseValue + structureValues;
     }
 
-    /*
-    private static BucketNumber GetFinalClickValue()
-    {
-        BucketNumber blackBananaBonus = BlackBananaBonus;
-        BucketNumber crit = CritMultiplier;
-
-        return BaseOnClickValue * blackBananaBonus * crit;
-    }
-    */
-
+    /// <summary>
+    /// Determines wether or not a click is critical based on the CritChance and CritMultiplier stats
+    /// accounting for any other factors such as CrazyCrit
+    /// </summary>
+    /// <returns></returns>
     private static BucketNumber RollCrit()
     {
-        if (Manager.Instance.banana.crazyCrit) 
+        if (Manager.Instance.game.crazyCrit) 
         {
-            float randomMultiplier = Random.Range(Manager.Instance.banana.critMultiplierRange.x, Manager.Instance.banana.critMultiplierRange.y);
+            float randomMultiplier = Random.Range(Stats.CritMultiplier.x, Stats.CritMultiplier.y);
 
             return new BucketNumber(randomMultiplier, 0);
         }
 
         int randomChance = Random.Range(1, 101);
 
-        if (new BucketNumber(randomChance, 0) <= Manager.Instance.banana.critChance)
+        if (new BucketNumber(randomChance, 0) <= Stats.CritChance)
         {
-            float randomMultiplier = Random.Range(Manager.Instance.banana.critMultiplierRange.x, Manager.Instance.banana.critMultiplierRange.y);
+            float randomMultiplier = Random.Range(Stats.CritMultiplier.x, Stats.CritMultiplier.y);
 
             return new BucketNumber(randomMultiplier, 0);
         }
@@ -104,7 +100,7 @@ public class Calculations
 
         double BBcounter = start;
         // While 
-        while (prestigeCost + GetPrestigeCost(BBcounter) < Manager.Instance.game.BananaCount)
+        while (prestigeCost < Manager.Instance.game.BananaCount)
         {
             prestigeCost += GetPrestigeCost(BBcounter);
             BBcounter++;
@@ -132,14 +128,13 @@ public class Calculations
 
     private static BucketNumber GetPrestigeCost(double value)
     {
-        BucketNumber baseToBucket = new BucketNumber(BasePrestigeCost, 0);
-        BucketNumber exp = new BucketNumber(1.1f, 0);
-        for(int i = 0; i < value; i++)
-        {
-            exp *= 1.1f;
-        }
+        float basePrice = 1000000;
+        float powValue = Mathf.Pow((float)value, 0.4f);
+        float logValue = Mathf.Log((float)value + 1);
 
-        return baseToBucket * exp;
+        float price = basePrice * (1f + Mathf.Pow(powValue, 1.25f * logValue));
+
+        return new BucketNumber(price, 0);
     }
 
     private static BucketNumber GetAllStructureIncome()
@@ -245,7 +240,7 @@ public class Calculations
 
     private static BucketNumber GetPeelReward()
     {
-        BucketNumber reward = Manager.Instance.banana.PeelThreshold * BaseOnClickValue * CritMultiplier * 2f;
+        BucketNumber reward = Manager.Instance.banana.PeelThreshold * BaseOnClickValue * CritMultiplier;
 
         return reward;
     }

@@ -16,13 +16,14 @@ MonoBehaviour:
   entryPrefab: {fileID: 7388310405057505629, guid: 6528e9ddb79c6bf44944ee93deb49847, type: 3}
   id: 0
   upgradeName: Banana Rake
-  upgradeDescription: description
-  sprite: {fileID: 21300000, guid: 97a9083a05373be4cbb17803a6cb3063, type: 3}
+  upgradeDescription: Who knew raking up bananas could be so satisfying? It's like
+    a tropical fall in your backyard.
+  sprite: {fileID: -1486096732, guid: 03f01a2228e1ca64d9313da418eaf04d, type: 3}
   basePrice:
     coefficient: 100
     magnitude: 0
   priceIncrease:
-    coefficient: 1.4
+    coefficient: 1.2
     magnitude: 0
   maxAmount:
     coefficient: -1

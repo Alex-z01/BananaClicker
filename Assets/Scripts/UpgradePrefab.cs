@@ -1,3 +1,4 @@
+using Steamworks;
 using System;
 using System.Collections.Generic;
 using TMPro;
@@ -6,6 +7,8 @@ using UnityEngine.UI;
 
 public class UpgradePrefab : MonoBehaviour
 {
+    private AudioControl _audioControl;
+
     public UpgradeScriptableObject upgradeData;
 
     public BucketNumber upgradeCost;
@@ -34,29 +37,32 @@ public class UpgradePrefab : MonoBehaviour
     [HideInInspector] public Game game;
     [HideInInspector] public Banana banana;
 
-    public List<AudioClip> audioClipList;
-
     public event EventHandler UpgradePurchased;
 
     private void Start()
     {
+        _audioControl = Manager.Instance.audioControl;
+
         statFunctions = new Dictionary<Stats.StatType, Action>()
         {
             { Stats.StatType.CrateUnlock, () => UnlockCrates() },
             { Stats.StatType.BalloonUnlock, () => UnlockBalloons() }
         };
 
-        Unlocked = Manager.Instance.game.CheckUnlockRequirements(upgradeData);
+        Unlocked = Manager.Instance.game.CheckUpgradeUnlockRequirements(upgradeData);
     }
 
     private void OnEnable()
     {
-        Unlocked = Manager.Instance.game.CheckUnlockRequirements(upgradeData);
+        Unlocked = Manager.Instance.game.CheckUpgradeUnlockRequirements(upgradeData);
     }
 
     private void CalculateScalingValues()
     {
-        upgradeCost = game?.upgrades[upgradeData.upgradeName].price + game.upgrades[upgradeData.upgradeName].price * game.upgrades[upgradeData.upgradeName].count * upgradeData.priceIncrease;
+        upgradeCost = upgradeData.basePrice + upgradeData.basePrice * Mathf.Pow(game.upgrades[upgradeData.upgradeName].count.GetValue(), upgradeData.priceIncrease.GetValue());
+
+
+        //upgradeCost = game?.upgrades[upgradeData.upgradeName].price + game.upgrades[upgradeData.upgradeName].price * game.upgrades[upgradeData.upgradeName].count * upgradeData.priceIncrease;
     }
 
     public void RefreshUI()
@@ -90,19 +96,30 @@ public class UpgradePrefab : MonoBehaviour
         switch(upgradeData.upgradeType)
         {
             case UpgradeScriptableObject.UpgradeType.Active:
-                upgradeDescText.text = $"{upgradeData.upgradeDescription} +{Calculations.ApplyBuffs(upgradeData.basePerClickValue)*Calculations.BlackBananaBonus} bananas/sec";
+                upgradeDescText.text = $"{upgradeData.upgradeDescription}\n +{Calculations.ApplyBuffs(upgradeData.basePerClickValue)*Calculations.BlackBananaBonus} bananas/click";
                 break;
 
             case UpgradeScriptableObject.UpgradeType.Idle:
-                upgradeDescText.text = $"{upgradeData.upgradeDescription} +{Calculations.ApplyBuffs(upgradeData.basePerSecondValue) * Calculations.BlackBananaBonus} bananas/click";
+                upgradeDescText.text = $"{upgradeData.upgradeDescription}\n +{Calculations.ApplyBuffs(upgradeData.basePerSecondValue) * Calculations.BlackBananaBonus} bananas/sec";
                 break;
 
             case UpgradeScriptableObject.UpgradeType.Stat:
-                upgradeDescText.text = $"{upgradeData.upgradeDescription} +{upgradeData.statChange * Calculations.BlackBananaBonus}% {upgradeData.statType.ToString()}";
+                if(upgradeData.statType == Stats.StatType.CrateUnlock || upgradeData.statType == Stats.StatType.BalloonUnlock)
+                {
+                    upgradeDescText.text = $"{upgradeData.upgradeDescription}\n";
+                    break;
+                }
+                if(upgradeData.statType == Stats.StatType.CritMultiplier)
+                {
+                    upgradeDescText.text = $"{upgradeData.upgradeDescription}\n +{upgradeData.statChange.GetValue()}x {upgradeData.statType.ToString()}";
+                    break;
+                }
+
+                upgradeDescText.text = $"{upgradeData.upgradeDescription}\n +{upgradeData.statChange}% {upgradeData.statType.ToString()}";
                 break;
 
             case UpgradeScriptableObject.UpgradeType.Buff:
-                upgradeDescText.text = $"{upgradeData.upgradeDescription} {upgradeData.buffValue * Calculations.BlackBananaBonus}%";
+                upgradeDescText.text = $"{upgradeData.upgradeDescription}\n {upgradeData.buffValue}%";
                 break;
 
             default:
@@ -116,7 +133,7 @@ public class UpgradePrefab : MonoBehaviour
     {
         upgradeCostText.text = upgradeCost.ToString();
 
-        if(game.BananaCount < upgradeCost) { upgradeCostText.color = Color.red; return; }
+        if(game.DisplayBananaCount < upgradeCost) { upgradeCostText.color = Color.red; return; }
         if(upgradeData.maxAmount == game.upgrades[upgradeData.upgradeName].count) { upgradeCostText.color = Color.blue; return; }
         upgradeCostText.color = Color.white;
     }
@@ -139,10 +156,7 @@ public class UpgradePrefab : MonoBehaviour
         game.BananaCount -= upgradeCost;
         game.upgrades[upgradeData.upgradeName].count += 1;
 
-        GetComponent<AudioSource>().PlayOneShot(audioClipList[0]);
-
-        game.HandleUpgradeBought();
-        banana.HandleUpgradeBought();
+        _audioControl.sfx.PlayOneShot(_audioControl.UI_Clips[0]);
 
         UpgradePurchased?.Invoke(this, EventArgs.Empty);
 
@@ -166,7 +180,7 @@ public class UpgradePrefab : MonoBehaviour
         if (game.BananaCount < upgradeCost)
         {
             GetComponent<UiUtility>().Shake(0.5f, 1f, transform.localPosition);
-            GetComponent<AudioSource>().PlayOneShot(audioClipList[1]);
+            _audioControl.sfx.PlayOneShot(_audioControl.UI_Clips[1]);
             print($"Cannot afford {upgradeData.upgradeName}!");
             return false;
         }
@@ -174,7 +188,7 @@ public class UpgradePrefab : MonoBehaviour
         if (upgradeData.maxAmount == game.upgrades[upgradeData.upgradeName].count)
         {
             GetComponent<UiUtility>().Shake(0.5f, 1f, transform.localPosition);
-            GetComponent<AudioSource>().PlayOneShot(audioClipList[1]);
+            _audioControl.sfx.PlayOneShot(_audioControl.UI_Clips[0]);
             print($"Max purchase amount of upgrade {upgradeData.upgradeName} reached!");
             return false;
         }

@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -16,8 +17,15 @@ public class CrateSystem : MonoBehaviour
     public float crateLifeSpan;
     public float crateSpawnRate;
 
+
+    private Gear _gear;
+    private Prestige _prestige;
+
     private void Start()
     {
+        _gear = Manager.Instance.gear;
+        _prestige = Manager.Instance.prestige;
+
         if(cratesUnlocked)
         {
             for (int i = 0; i < numCrateSpawners; i++)
@@ -26,6 +34,27 @@ public class CrateSystem : MonoBehaviour
             }
             StartCrateSpawners();
         }
+
+        Subscriptions();
+    }
+
+
+    private void Subscriptions()
+    {
+        _gear.EquipSocketChanged += OnItemChange;
+        _prestige.OnPrestige += OnPrestige;
+    }
+
+    private void OnItemChange()
+    {
+        numCrateSpawners = Stats.CrateSpawnerCount;
+        crateChance = Stats.CrateSpawnChance;
+        crateSpawnRate = Stats.CrateSpawnRate;
+    }
+
+    private void OnPrestige(object sender, EventArgs args)
+    {
+        cratesUnlocked = false;
     }
 
     public void AddCrateSpawner()

@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6102e744de7066a46866277d341ebf42, type: 3}
+  m_Name: Camo_Boots
+  m_EditorClassIdentifier: 
+  id: 0
+  Item_Name: Camo Boots
+  Item_Description: Sneak up on your enemies in the banana jungle
+  sprite: {fileID: 1752122272, guid: 08c3aab3e9d33aa4b9d2e5cc2cec47d7, type: 3}
+  position: {x: -87.1, y: -108.1, z: 0}
+  rotation: {x: 0, y: 0, z: 0}
+  dimensions: {x: 192, y: 192}
+  Socket: 3
+  ValidTiers: 00000000
+  ValidStats: 

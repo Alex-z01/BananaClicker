@@ -1,11 +1,12 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
+using UnityEngine.UI;
 
-[System.Serializable]
+[Serializable]
 public class Layout
 {
-    [HideInInspector]
     public Vector3 originalPosition;
 
     public string layoutName;
@@ -20,19 +21,22 @@ public class Layout
         set
         {
             _state = value;
-            layout.transform.position = originalPosition;
+            if(!_state) { layout.transform.localPosition = originalPosition; }
             layout.SetActive(_state);
         }
     }
 
     public Vector3 intendedLocation;
+    public int track;
 }
 
 public class UIController : MonoBehaviour
 {
-    private UiUtility uiUtility;
-
     public GameObject mainCanvas;
+
+    public Image BananaImage;
+    public Sprite[] PeelStages;
+    public Sprite[] CurrencySprites;
 
     public TMP_Text bananaCountText;
     public TMP_Text bananaProduceText;
@@ -47,6 +51,7 @@ public class UIController : MonoBehaviour
     public TMP_Text totalPrestigesText, prestigeBonusText;
 
     public List<Transform> shopTabs;
+    public List<Transform> menuButtons;
     public List<Transform> upgradeContainers;
 
     public Transform HUD;
@@ -57,27 +62,54 @@ public class UIController : MonoBehaviour
     public Layout previousLayout, currentLayout;
     public List<Layout> layoutList;
 
-    private AudioSource audioSource;
-
-    private Game game;
-    private Banana banana;
-    private Prestige prestige;
-    private DataManager dataManager;
-    private AudioControl audioControl;
+    private AudioControl _audioControl;
+    private Game _game;
+    private Banana _banana;
+    private Prestige _prestige;
+    private DataManager _dataManager;
 
     private void Start()
     {
-        uiUtility = GetComponent<UiUtility>();
-        audioSource = GetComponent<AudioSource>();
-        game = Manager.Instance.game;
-        banana = Manager.Instance.banana;
-        prestige = Manager.Instance.prestige;
-        dataManager = Manager.Instance.dataManager;
-        audioControl = Manager.Instance.audioControl;
+        _game = Manager.Instance.game;
+        _banana = Manager.Instance.banana;
+        _prestige = Manager.Instance.prestige;
+        _dataManager = Manager.Instance.dataManager;
+        _audioControl = Manager.Instance.audioControl;
 
         foreach(Layout layout in layoutList) 
         {
-            layout.originalPosition = layout.layout.transform.position;
+            layout.originalPosition = layout.layout.GetComponent<RectTransform>().localPosition;
+        }
+
+        Subscriptions();
+    }
+
+    private void Subscriptions()
+    {
+        _prestige.OnPrestige += OnPrestige;
+    }
+
+    private void OnPrestige(object sender, EventArgs args)
+    {
+        ResetShopTabs();
+        ResetMenuTabs();
+    }
+
+    private void ResetShopTabs()
+    {
+        for(int i = 2; i < shopTabs.Count; i++)
+        {
+            shopTabs[i].Find("lock").GetComponent<Image>().enabled = true;
+            shopTabs[i].Find("icon").GetComponent<Image>().enabled = false;
+        }
+    }
+
+    private void ResetMenuTabs()
+    {
+        for (int i = 1; i < shopTabs.Count; i++)
+        {
+            menuButtons[i].Find("lock").GetComponent<Image>().enabled = true;
+            menuButtons[i].Find("icon").GetComponent<Image>().enabled = false;
         }
     }
 
@@ -87,6 +119,35 @@ public class UIController : MonoBehaviour
         {
             ShowLayout("Default");
         }
+    }
+
+    public void OpenShop()
+    {
+        ShowLayout("Upgrades");
+        ShopTab(0);
+
+        RectTransform rectTransform = layoutList[1].layout.GetComponent<RectTransform>();
+
+        StartCoroutine(AnimUtility.Slide(rectTransform, rectTransform.localPosition, layoutList[1].intendedLocation, 0.35f));
+    }
+
+    public void OpenSettings()
+    {
+        ShowLayout("Settings");
+        RefreshStatsMenu();
+
+        RectTransform rectTransform = layoutList[5].layout.GetComponent<RectTransform>();
+
+        StartCoroutine(AnimUtility.Slide(rectTransform, rectTransform.localPosition, layoutList[5].intendedLocation, 0.35f));
+    }
+
+    public void OpenVideoSettings()
+    {
+        ShowLayout("VideoSettings");
+
+        RectTransform rectTransform = layoutList[6].layout.GetComponent<RectTransform>();
+
+        StartCoroutine(AnimUtility.Slide(rectTransform, rectTransform.localPosition, layoutList[6].intendedLocation, 0.35f));
     }
 
     public void UpdateBananaCount(BucketNumber value)
@@ -112,13 +173,46 @@ public class UIController : MonoBehaviour
         print($"Prestige cost {value}");
         prestigeCostText.text = value.ToString();
 
-        prestigeCostText.color = game.BananaCount >= value ? Color.white : Color.red;
+        prestigeCostText.color = _game.BananaCount >= value ? Color.white : Color.red;
     }
 
     public void UpdateBlackBananaCount(BucketNumber value)
     {
         //print($"Black bananas {value}");
         blackBananaCountText.text = value.ToString();
+    }
+
+    public void PeelUI(int stage)
+    {
+        if(BananaImage.sprite == PeelStages[stage]) { return; }
+
+        BananaImage.sprite = PeelStages[stage];
+
+        if(stage == 5)
+        {
+            GameObject peeledBanana = Instantiate(BananaImage.gameObject, BananaImage.gameObject.transform.parent);
+            GameObject bananaGainContainer = Instantiate(Manager.Instance.banana.gainTextPrefab, peeledBanana.transform);
+
+            bananaGainContainer.GetComponent<TMP_Text>().text = "+" + Calculations.PeelReward;
+            bananaGainContainer.GetComponent<TextUtility>().text = bananaGainContainer.GetComponent<TMP_Text>();
+            bananaGainContainer.GetComponent<TextUtility>().EnableOutline();
+            bananaGainContainer.GetComponent<TMP_Text>().fontSize = 85f;
+            bananaGainContainer.GetComponent<TMP_Text>().fontSharedMaterial.SetFloat("_OutlineWidth", 0.1f);
+            bananaGainContainer.GetComponent<TMP_Text>().color = UnityEngine.Random.ColorHSV();
+
+            Destroy(peeledBanana.GetComponent<Button>());
+            Destroy(peeledBanana.GetComponent<Banana>());
+
+            peeledBanana.transform.localPosition = BananaImage.transform.localPosition + new Vector3(0, 0, -5f);
+
+            peeledBanana.GetComponent<Image>().raycastTarget = false;
+
+            peeledBanana.GetComponent<UiUtility>().Pop(0.85f, 8f, Vector2.zero, peeledBanana.transform.localScale);
+            peeledBanana.GetComponent<UiUtility>().SlideTo(peeledBanana, peeledBanana.transform.localPosition + new Vector3(0, 200f, 0), 1f);
+            peeledBanana.GetComponent<UiUtility>().FadeOut(0.85f, true);
+
+            _audioControl.sfx.PlayOneShot(_audioControl.Banana_Clip[2]);
+        }
     }
 
     public void ShowLayout(string layoutName)
@@ -133,7 +227,6 @@ public class UIController : MonoBehaviour
             {
                 currentLayout = layout;
                 layout.State = true;
-                uiUtility.SlideTo(currentLayout.layout, layout.intendedLocation, 0.75f);
             }
             else if(!layout.alwaysActive)
             {
@@ -141,45 +234,37 @@ public class UIController : MonoBehaviour
             }
         });
 
-        audioSource.PlayOneShot(audioControl.UI_Clips[2]);
+        _audioControl.sfx.PlayOneShot(_audioControl.UI_Clips[2]);
+
+        if (_audioControl.music.clip.name != _audioControl.Music[currentLayout.track].name) 
+        {
+            _audioControl.music.clip = _audioControl.Music[currentLayout.track];
+            _audioControl.music.Stop();
+            _audioControl.music.Play(0);
+        }
+        
     }
 
     public void ShopTab(int index)
     {
         switch (index)
         {
-            case 0: // Actives
-                if (!Stats.ActiveUnlocked)
-                {
-                    shopTabs[index].GetComponent<UiUtility>().Shake(0.5f, 1, shopTabs[index].transform.localPosition);
-                    GetComponent<AudioSource>().PlayOneShot(audioControl.UI_Clips[1]);
-                    return;
-                }
-                break; 
-            
-            case 1: // Idle
-                if (!Stats.IdleUnlocked) 
-                {
-                    shopTabs[index].GetComponent<UiUtility>().Shake(0.5f, 1, shopTabs[index].transform.localPosition);
-                    GetComponent<AudioSource>().PlayOneShot(audioControl.UI_Clips[1]);
-                    return;
-                }
-                break;
-
+            // Stat menu
             case 2:
-                if (!Stats.StatUnlocked)
+                if (!Stats.Unlockables["Stat_Upgrades"].IsUnlocked)
                 {
                     shopTabs[index].GetComponent<UiUtility>().Shake(0.5f, 1, shopTabs[index].transform.localPosition);
-                    GetComponent<AudioSource>().PlayOneShot(audioControl.UI_Clips[1]);
+                    _audioControl.sfx.PlayOneShot(_audioControl.UI_Clips[1]);
                     return;
                 }
                 break;
 
+            // Buff menu
             case 3:
-                if (!Stats.BuffUnlocked)
+                if (!Stats.Unlockables["Buff_Upgrades"].IsUnlocked)
                 {
                     shopTabs[index].GetComponent<UiUtility>().Shake(0.5f, 1, shopTabs[index].transform.localPosition);
-                    GetComponent<AudioSource>().PlayOneShot(audioControl.UI_Clips[1]);
+                    _audioControl.sfx.PlayOneShot(_audioControl.UI_Clips[1]);
                     return;
                 }
                 break;
@@ -213,14 +298,14 @@ public class UIController : MonoBehaviour
         BucketNumber activeUpgrades = BucketNumber.Zero;
         BucketNumber idleUpgrades = BucketNumber.Zero;
 
-        foreach (KeyValuePair<string, GenericUpgrade> pair in game.upgrades)
+        foreach (KeyValuePair<string, GenericUpgrade> pair in _game.upgrades)
         {
-            if (dataManager.defaultUpgradeData[pair.Key].upgradeType.Equals(UpgradeScriptableObject.UpgradeType.Active))
+            if (_dataManager.defaultUpgradeData[pair.Key].upgradeType.Equals(UpgradeScriptableObject.UpgradeType.Active))
             {
                 activeUpgrades += pair.Value.count;
             }
 
-            else if(dataManager.defaultUpgradeData[pair.Key].upgradeType.Equals(UpgradeScriptableObject.UpgradeType.Idle))
+            else if(_dataManager.defaultUpgradeData[pair.Key].upgradeType.Equals(UpgradeScriptableObject.UpgradeType.Idle))
             {
                 idleUpgrades += pair.Value.count;
             }
@@ -229,10 +314,10 @@ public class UIController : MonoBehaviour
         totalActiveUpgradesText.text = "Active Upgrades: " + activeUpgrades.ToString();
         totalIdleUpgradesText.text = "Idle Upgrades: " + idleUpgrades.ToString();
 
-        critChanceText.text = "Crit Chance: " + banana.critChance.ToString() + "%";
-        critMultiplierText.text = "Crit Multiplier: " + $"({banana.critMultiplierRange.x}x, {banana.critMultiplierRange.y}x)";
+        critChanceText.text = "Crit Chance: " + Stats.CritChance.ToString() + "%";
+        critMultiplierText.text = "Crit Multiplier: " + $"({Stats.CritMultiplier.x}x, {Stats.CritMultiplier.y}x)";
 
-        totalPrestigesText.text = "Total Prestiges: " + prestige.totalPrestiges.ToString("##,##0");
-        prestigeBonusText.text = "Prestige Bonus: " + $"{prestige.BlackBananas.GetValue() * 0.15f}%";
+        totalPrestigesText.text = "Total Prestiges: " + _prestige.totalPrestiges.ToString("##,##0");
+        prestigeBonusText.text = "Prestige Bonus: " + $"{_prestige.BlackBananas.GetValue() * 0.25f}%";
     }
 }

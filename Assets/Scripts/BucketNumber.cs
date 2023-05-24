@@ -2,6 +2,9 @@ using System;
 using UnityEditor;
 using System.Runtime.Serialization;
 using UnityEngine;
+using Newtonsoft.Json.Linq;
+using Newtonsoft.Json;
+using System.Collections.Generic;
 
 [Serializable]
 public class BucketNumber : IComparable<BucketNumber>, ISerializable
@@ -28,6 +31,12 @@ public class BucketNumber : IComparable<BucketNumber>, ISerializable
         return coefficient * (float)Math.Pow(10, magnitude * 3);
     }
 
+    public BucketNumber()
+    {
+        this.coefficient = 0;
+        this.magnitude = 0;
+    }
+
     public BucketNumber(float coefficient, int magnitude)
     {
         if (coefficient == 0 && magnitude != 0)
@@ -36,7 +45,7 @@ public class BucketNumber : IComparable<BucketNumber>, ISerializable
             return;
         }
 
-        if (coefficient >= 1000 || coefficient < 1)
+        if (coefficient >= 1000)
         {
             while (coefficient >= 1000)
             {
@@ -45,14 +54,15 @@ public class BucketNumber : IComparable<BucketNumber>, ISerializable
             }
         } 
 
+        if (coefficient < 1 && coefficient > 0)
+        {
+            coefficient *= 1000f;
+            magnitude--;
+        }
+
         if(coefficient < 0)
         {
             throw new ArgumentOutOfRangeException("Coefficient cannot be negative.");
-        }
-
-        if(magnitude < 0)
-        {
-            throw new ArgumentOutOfRangeException("Magnitude cannot be below zero.");
         }
 
         if(magnitude < 2)
@@ -63,6 +73,30 @@ public class BucketNumber : IComparable<BucketNumber>, ISerializable
         this.magnitude = magnitude;
     }
 
+    public BucketNumber Clone()
+    {
+        BucketNumber clone = new BucketNumber();
+        clone.coefficient = this.coefficient;
+        clone.magnitude = this.magnitude;
+        return clone;
+    }
+
+    public static BucketNumber Random(BucketNumber minInclusive, BucketNumber maxExclusive)
+    {
+        float coef = UnityEngine.Random.Range(minInclusive.coefficient, maxExclusive.coefficient);
+        int mag = UnityEngine.Random.Range(minInclusive.magnitude, maxExclusive.magnitude);
+
+        return new BucketNumber(coef, mag);
+    }
+
+    public BucketNumber Round(int precision)
+    {
+        coefficient = (float)Math.Round(coefficient, precision);
+
+        return this;
+    }
+
+    
     // Deserialization constructor
     protected BucketNumber(SerializationInfo info, StreamingContext context) 
     {
@@ -76,7 +110,7 @@ public class BucketNumber : IComparable<BucketNumber>, ISerializable
         info.AddValue("coefficient", coefficient);
         info.AddValue("magnitude", magnitude);
     }
-
+    
     public int CompareTo(BucketNumber other)
     {
         if (magnitude == other.magnitude)
@@ -89,9 +123,13 @@ public class BucketNumber : IComparable<BucketNumber>, ISerializable
 
     public override string ToString()
     {
-        if(magnitude < 2)
+        if(magnitude == 1)
         {
             return $"{Mathf.Floor(coefficient * Mathf.Pow(10, magnitude * 3)).ToString("##,##0")}";
+        }
+        if(magnitude == 0) 
+        {
+            return $"{Math.Round(coefficient, 2)}";
         }
         return $"{coefficient.ToString("F3")}{Manager.Instance.dataManager.magnitudeNames[magnitude]}";
     }
@@ -298,6 +336,12 @@ public class BucketNumber : IComparable<BucketNumber>, ISerializable
         return new BucketNumber(resultCoefficient, resultMagnitude);
     }
 
+    public static BucketNumber operator -(BucketNumber a, int value)
+    {
+        a.coefficient -= value;
+        return a;
+    }
+
     // MULTIPLICATION
 
     public static BucketNumber operator *(BucketNumber a, BucketNumber b)
@@ -452,3 +496,38 @@ public class BucketNumberDrawer : PropertyDrawer
 }
 
 #endif
+
+public class BucketNumberConverter : JsonConverter
+{
+    public override bool CanConvert(Type objectType)
+    {
+        return objectType == typeof(Dictionary<object, BucketNumber>);
+    }
+
+    public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+    {
+        JObject jsonObject = JObject.Load(reader);
+
+        var result = new Dictionary<object, BucketNumber>();
+        foreach (var property in jsonObject.Properties())
+        {
+            var value = property.Value.ToObject<BucketNumber>(serializer);
+            result.Add(property.Name, value);
+        }
+
+        return result;
+    }
+
+    public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+    {
+        var dictionary = (Dictionary<object, BucketNumber>)value;
+
+        writer.WriteStartObject();
+        foreach (var pair in dictionary)
+        {
+            writer.WritePropertyName(pair.Key.ToString());
+            serializer.Serialize(writer, pair.Value);
+        }
+        writer.WriteEndObject();
+    }
+}

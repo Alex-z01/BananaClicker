@@ -11,9 +11,21 @@ public class BalloonSystem : MonoBehaviour
     public int balloonCount;
     public float balloonRewardChance;
 
+    private Gear gear;
+
     private void Start()
     {
+        gear = Manager.Instance.gear;
+
+        gear.EquipSocketChanged += OnItemChange;
+
         SpawnBalloon();
+    }
+
+    private void OnItemChange()
+    {
+        balloonCount = Stats.BalloonSpawnCount;
+        balloonRewardChance = Stats.BalloonRewardChance;
     }
 
     public void SpawnBalloon()

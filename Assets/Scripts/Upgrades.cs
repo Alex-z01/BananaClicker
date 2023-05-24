@@ -9,6 +9,8 @@ public class Upgrades : MonoBehaviour
     private UIController uIController;
 
     List<UpgradePrefab> upgradePrefabs = new List<UpgradePrefab>();
+
+    public event EventHandler OnBought;
     
     private void Start()
     {
@@ -18,6 +20,11 @@ public class Upgrades : MonoBehaviour
 
         SpawnUpgradePrefabs();
         SubscribeToPurchases();
+    }
+
+    public void RaiseOnBoughtEvent()
+    {
+        OnBought?.Invoke(this, EventArgs.Empty);
     }
 
     void SubscribeToPurchases()
@@ -31,6 +38,8 @@ public class Upgrades : MonoBehaviour
     private void OnUpgradePurchased(object sender, EventArgs e)
     {
         Debug.Log($"Purchased event: {sender}, {e}");
+
+        OnBought?.Invoke(this, e);
         UnlockUpgrades();
     }
 
@@ -62,7 +71,7 @@ public class Upgrades : MonoBehaviour
             entry.GetComponent<UpgradePrefab>().game = Manager.Instance.game;
             entry.GetComponent<UpgradePrefab>().banana = Manager.Instance.banana;
             entry.GetComponent<UpgradePrefab>().upgradeData = pair.Value;
-            entry.GetComponent<UpgradePrefab>().Unlocked = game.CheckUnlockRequirements(pair.Value);
+            entry.GetComponent<UpgradePrefab>().Unlocked = game.CheckUpgradeUnlockRequirements(pair.Value);
 
             upgradePrefabs.Add(entry.GetComponent<UpgradePrefab>());
         }
@@ -72,7 +81,7 @@ public class Upgrades : MonoBehaviour
     {
         foreach(UpgradePrefab upgrade in upgradePrefabs)
         {
-            upgrade.Unlocked = upgrade.Unlocked ? true : game.CheckUnlockRequirements(upgrade.upgradeData);
+            upgrade.Unlocked = upgrade.Unlocked ? true : game.CheckUpgradeUnlockRequirements(upgrade.upgradeData);
         }
     }
 }

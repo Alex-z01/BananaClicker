@@ -9,14 +9,17 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 0}
+  m_Script: {fileID: 11500000, guid: 6102e744de7066a46866277d341ebf42, type: 3}
   m_Name: Shades
   m_EditorClassIdentifier: Assembly-CSharp::EquippableScriptableObject
   id: 0
   Item_Name: Shades
-  Item_Description: Rad pair of dark shades
-  sprite: {fileID: 21300000, guid: 3fc1099edca8be44f87fa16bfbb18078, type: 3}
-  position: {x: 100, y: 30, z: 0}
-  rotation: {x: 0, y: 0, z: -20}
-  dimensions: {x: 200, y: 400}
+  Item_Description: Stay cool and stylish under the banana sun with these trendy
+    sunglasses.
+  sprite: {fileID: 760855478, guid: 773ea11b556838d4c90263ea59c0f507, type: 3}
+  position: {x: 46.5, y: 39.4, z: 0}
+  rotation: {x: 0, y: 0, z: -8}
+  dimensions: {x: 192, y: 192}
   Socket: 0
+  ValidTiers: 00000000010000000200000003000000
+  ValidStats: 

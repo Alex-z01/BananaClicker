@@ -1,63 +1,100 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class Gear : MonoBehaviour
 {
-    public Dictionary<string, Equippable> All_Equippables = new Dictionary<string, Equippable>();
+    public Inventory<Equippable> PlayerInventory = new Inventory<Equippable>(10);
 
     public enum EquipSocket { Head, LeftSide, RightSide, Feet, Skin };
-    public enum GearRating { Regular, Special, Legendary };
 
-    public List<GameObject> SocketContainers = new List<GameObject>();
+    public List<GameObject> SocketContainers = new();
 
-    private Dictionary<EquipSocket, Equippable> _equipSockets = new Dictionary<EquipSocket, Equippable>();
+    public Dictionary<EquipSocket, Equippable> EquipSockets = new();
 
     public event Action EquipSocketChanged;
 
+    private Prestige _prestige;
+
     private void Start()
     {
-        EquipSocketChanged += RefreshEquippedDisplay;
+        _prestige = Manager.Instance.prestige;
+
+        Subscriptions();
 
         RefreshEquippedDisplay();
     }
 
-    private void Update()
+    private void Subscriptions()
     {
-        // FOR TESTING
-        if (Input.GetKeyDown(KeyCode.P))
-        {
-            EquipItem(All_Equippables["Shades"]);
-        }
-        if (Input.GetKeyDown(KeyCode.U)) 
-        {
-            UnequipItem(All_Equippables["Shades"]);
-        }
+        EquipSocketChanged += RefreshEquippedDisplay;
+        _prestige.OnPrestige += OnPrestige;
     }
 
-    private void EquipItem(Equippable equippable)
+    private void OnPrestige(object sender, EventArgs e)
+    {
+        PlayerInventory.Clear();
+        EquipSockets = Manager.Instance.dataManager.InitializeDefaultEquipSockets();
+
+        RefreshEquippedDisplay();
+    }
+
+    public void EquipItem(Equippable equippable)
     {
         if (equippable == null || equippable.EquipedState) { Debug.Log("Already Equipped"); return; }
 
-        Debug.Log($"Equipped {equippable.Item_Name} into {equippable.Socket} socket");
+        UnequipItem(equippable.Socket);
+
+        Debug.Log($"Equipped {equippable.Item_Name}:{equippable.Item_Info._ID} into {equippable.Socket} socket");
 
         equippable.EquipedState = true;
 
-        _equipSockets[equippable.Socket] = equippable;
+        EquipSockets[equippable.Socket] = equippable;
 
         OnEquipSocketChanged(equippable.Socket, equippable);
     }
 
-    private void UnequipItem(Equippable equippable)
+    public void UnequipItem(Equippable equippable)
     {
-        if (equippable == null || !equippable.EquipedState) return;
+        if (equippable == null || !equippable.EquipedState) { Debug.Log("Nothing to unequip!"); return; }
 
-        Debug.Log($"Unequipped {equippable.Item_Name} from {equippable.Socket} socket");
+        Debug.Log($"Unequipped {equippable.Item_Name}:{equippable.Item_Info._ID} from {equippable.Socket} socket");
 
         equippable.EquipedState = false;
 
-        _equipSockets[equippable.Socket] = null;
+        EquipSockets[equippable.Socket] = null;
+
+        OnEquipSocketChanged(equippable.Socket, equippable);
+    }
+
+    private void UnequipItem(EquipSocket socket)
+    {
+        Equippable equippable = PlayerInventory.Find(item => item == EquipSockets[socket]);
+
+        if (equippable == null || !equippable.EquipedState) { Debug.Log("Nothing to unequip!"); return; }
+
+        Debug.Log($"Unequipped {equippable.Item_Name}:{equippable.Item_Info._ID} from {equippable.Socket} socket");
+
+        equippable.EquipedState = false;
+
+        EquipSockets[equippable.Socket] = null;
+
+        OnEquipSocketChanged(equippable.Socket, equippable);
+    }
+
+    private void UnequipItem(int ID)
+    {
+        Equippable equippable = PlayerInventory.Find(item => item.Item_Info._ID == ID);
+
+        if (equippable == null || !equippable.EquipedState) { Debug.Log("Nothing to unequip!"); return; }
+
+        Debug.Log($"Unequipped {equippable.Item_Name}:{equippable.Item_Info._ID} from {equippable.Socket} socket");
+
+        equippable.EquipedState = false;
+
+        EquipSockets[equippable.Socket] = null;
 
         OnEquipSocketChanged(equippable.Socket, equippable);
     }
@@ -70,26 +107,21 @@ public class Gear : MonoBehaviour
 
     private void RefreshEquippedDisplay()
     {
-        int counter = 0;
-
         Debug.Log("Refreshing gear");
-
-        foreach(KeyValuePair<EquipSocket, Equippable> pair in _equipSockets)
+        foreach(KeyValuePair<EquipSocket, Equippable> pair in EquipSockets)
         {
-            if(pair.Value == null)
-            {
-                SocketContainers[counter].GetComponent<Image>().enabled = false;
-                counter++;
-                continue;
-            }
+            int socket = pair.Key.GetHashCode();
 
-            SocketContainers[counter].GetComponent<RectTransform>().localPosition = pair.Value.Position;
-            SocketContainers[counter].GetComponent<RectTransform>().localRotation = Quaternion.Euler(pair.Value.Rotation);
-            SocketContainers[counter].GetComponent<RectTransform>().sizeDelta = pair.Value.Dimensions;
+            if (pair.Value == null || !pair.Value.EquipedState) { SocketContainers[socket].GetComponent<Image>().enabled = false; continue; }
 
-            SocketContainers[counter].GetComponent<Image>().enabled = true;
-            SocketContainers[counter].GetComponent<Image>().sprite = pair.Value.Sprite;
-            counter++;
+            EquippableScriptableObject obj = Manager.Instance.dataManager.defaultEquippablesData[pair.Value.Item_Name];
+
+            SocketContainers[socket].GetComponent<RectTransform>().localPosition = obj.position;
+            SocketContainers[socket].GetComponent<RectTransform>().localRotation = Quaternion.Euler(obj.rotation);
+            SocketContainers[socket].GetComponent<RectTransform>().sizeDelta = obj.dimensions;
+
+            SocketContainers[socket].GetComponent<Image>().enabled = true;
+            SocketContainers[socket].GetComponent<Image>().sprite = obj.sprite;
         }
     }
 }

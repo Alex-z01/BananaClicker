@@ -6,7 +6,16 @@ using UnityEngine;
 public class Unlockable
 {
     public string Name { get; private set; }
-    public bool IsUnlocked { get; set; }
+    private bool _isUnlocked;
+    public bool IsUnlocked
+    {
+        get { return _isUnlocked; }
+        set 
+        { 
+            _isUnlocked = value;
+            if(_isUnlocked) { InvokeOnUnlock(); }
+        }
+    }
     public List<IUnlockRequirement> Requirements { get; private set; }
 
     public delegate void UnlockableUnlockedHandler();
@@ -21,17 +30,11 @@ public class Unlockable
         {
             OnUnlocked += handler;
         }
-
-        IsUnlocked = CheckUnlockRequirements();
     }
 
     public bool CheckUnlockRequirements()
     {
-        if (IsUnlocked)
-        {
-            InvokeOnUnlock();
-            return true;
-        }
+        if (IsUnlocked) { return true; }
 
         foreach (IUnlockRequirement requirement in Requirements)
         {
@@ -41,8 +44,6 @@ public class Unlockable
             }
         }
 
-        InvokeOnUnlock();
-        IsUnlocked = true;
         return true;
     }
    
@@ -125,5 +126,49 @@ public class TimeRequirement : IUnlockRequirement
     private float GetTimePlayed()
     {
         return Manager.Instance.game.timePlayed;
+    }
+}
+
+[Serializable]
+public class UnlockableRequirement : IUnlockRequirement
+{
+    [SerializeField]
+    private Unlockable _unlockRequirement;
+
+    public UnlockableRequirement(Unlockable unlockRequirement)
+    {
+        _unlockRequirement = unlockRequirement;
+    }
+
+    public bool IsFulfilled()
+    {
+        return GetUnlockFulfilled();
+    }
+
+    private bool GetUnlockFulfilled()
+    {
+        return _unlockRequirement.IsUnlocked;
+    }
+}
+
+[Serializable]
+public class BlackBananaRequirement : IUnlockRequirement
+{
+    [SerializeField]
+    private BucketNumber _requiredBlackBananas;
+
+    public BlackBananaRequirement(BucketNumber requiredBlackBananas)
+    {
+        _requiredBlackBananas = requiredBlackBananas;
+    }
+
+    public bool IsFulfilled()
+    {
+        return GetBlackBananaCount() >= _requiredBlackBananas;
+    }
+
+    private BucketNumber GetBlackBananaCount()
+    {
+        return Manager.Instance.prestige.BlackBananas;
     }
 }

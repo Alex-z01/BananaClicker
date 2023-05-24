@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b0b2fad4b2128694ab048b1048ec1441, type: 3}
+  m_Name: Regular
+  m_EditorClassIdentifier: 
+  tier: 0
+  BasePriceRatio: 0.5
+  PriceInfluence: 0.6
+  color: {r: 1, g: 1, b: 1, a: 1}
+  Chance: 50
+  MinStatCount: 1
+  MaxStatCount: 2
+  ValidStats: 0100000002000000

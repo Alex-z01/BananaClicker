@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using TMPro;
 using UnityEngine;
@@ -19,43 +20,58 @@ public class Banana : MonoBehaviour
     public BucketNumber PeelThreshold;
     public BucketNumber PeelProgress;
 
-    public BucketNumber critChance;
-    public Vector2 critMultiplierRange;
-    public bool crazyCrit;
-    public float crazyCritTimer;
-
     private Vector3 originalScale;
 
-    private Game game;
-    private AudioControl audioControl;
+    private AudioControl _audioControl;
+    private Game _game;
+    private Gear _gear;
+    private Prestige _prestige;
+    private Upgrades _upgrades;
+    private UIController _uIController;
     
     private void Start()
     {
-        game = Manager.Instance.game;
-        audioControl = Manager.Instance.audioControl;
+        _audioControl = Manager.Instance.audioControl;
+        _game = Manager.Instance.game;
+        _gear = Manager.Instance.gear;
+        _prestige = Manager.Instance.prestige;
+        _upgrades = Manager.Instance.upgrades;
+        _uIController = Manager.Instance.uIController;
 
         originalScale = transform.localScale;
 
-        InvokeRepeating("CrazyCrit", 5, 300);
+        Subscriptions();
+    }
+
+    private void Subscriptions()
+    {
+        _gear.EquipSocketChanged += OnItemChange;
+        _upgrades.OnBought += OnUpgradeBought;
+        _prestige.OnPrestige += OnPrestige;
+    }
+
+    private void OnItemChange()
+    {
+        BananaClickValue = Calculations.BaseOnClickValue;
     }
 
     public void Collect()
     {
         BucketNumber blackBananaBonus = Calculations.BlackBananaBonus;
         BucketNumber critMultiplier = Calculations.CritMultiplier;
-        BucketNumber finalClickValue = BananaClickValue * critMultiplier;
-
-        //print($"{BananaClickValue} {blackBananaBonus} {critMultiplier}");
+        BucketNumber finalClickValue = Calculations.BaseOnClickValue * critMultiplier;
 
         Peel();
-        game.BananaCount += finalClickValue;
-        game.DisplayBananaCount += finalClickValue;
+
+        _game.BananaCount += finalClickValue;
+        _game.DisplayBananaCount += finalClickValue;
 
         // Banana Pop
         GetComponent<UiUtility>().Pop(0.2f, 0.1f, Vector2.zero, originalScale);
 
-        GameObject bananaGainContainer = Instantiate(gainTextPrefab, transform);
+        GameObject bananaGainContainer = Instantiate(gainTextPrefab, transform.parent);
 
+        bananaGainContainer.transform.position = Input.mousePosition;
         bananaGainContainer.GetComponent<TMP_Text>().text = "+" + finalClickValue.ToString();
         bananaGainContainer.GetComponent<TextUtility>().text = bananaGainContainer.GetComponent<TMP_Text>();
 
@@ -64,18 +80,17 @@ public class Banana : MonoBehaviour
             bananaGainContainer.GetComponent<TextUtility>().EnableOutline();
             bananaGainContainer.GetComponent<TMP_Text>().fontSize = 85f;
             bananaGainContainer.GetComponent<TMP_Text>().fontSharedMaterial.SetFloat("_OutlineWidth", 0.1f);
-            bananaGainContainer.GetComponent<TMP_Text>().color = Random.ColorHSV();
+            bananaGainContainer.GetComponent<TMP_Text>().color = UnityEngine.Random.ColorHSV();
 
             bananaGainContainer.GetComponent<TextUtility>().Pop(1f, 1f + critMultiplier.GetCoefficient() / 10f, new Vector2(-30f, 30f));
-            bananaGainContainer.GetComponent<TextUtility>().FadeOut(4f, true);
-            bananaGainContainer.GetComponent<TextUtility>().SlideUp(4f, 150f);
+            bananaGainContainer.GetComponent<TextUtility>().FadeOut(2f, true);
+            bananaGainContainer.GetComponent<TextUtility>().SlideUp(2f, 150f);
 
-            GetComponent<AudioSource>().PlayOneShot(audioControl.Banana_Clip[1]);
-
+            _audioControl.sfx.PlayOneShot(_audioControl.Banana_Clip[1]);
             return;
         }
 
-        GetComponent<AudioSource>().PlayOneShot(audioControl.Banana_Clip[0]);
+        _audioControl.sfx.PlayOneShot(_audioControl.Banana_Clip[0]);
         bananaGainContainer.GetComponent<TextUtility>().DefaultFont();
         bananaGainContainer.GetComponent<TMP_Text>().fontSize = 20f;
         bananaGainContainer.GetComponent<TextUtility>().Pop(0.5f, 0.5f, new Vector2(-20f, 20f));
@@ -87,57 +102,34 @@ public class Banana : MonoBehaviour
     {
         PeelProgress += 1;
 
+        double ratio = PeelProgress.GetValue() / PeelThreshold.GetValue();
+
+        if (ratio < 0.2f) { _uIController.PeelUI(0); }
+        else if(ratio < 0.4f) { _uIController.PeelUI(1); }
+        else if(ratio < 0.6f) { _uIController.PeelUI(2); }
+        else if(ratio < 0.8f) { _uIController.PeelUI(3); }
+        else if(ratio < 1f) { _uIController.PeelUI(4); }
+
         if(PeelProgress >= PeelThreshold)
         {
+            _uIController.PeelUI(5);
+            _uIController.PeelUI(0);
+
             PeelProgress = BucketNumber.Zero;
-            game.BananaCount += Calculations.PeelReward;
+            _game.BananaCount += Calculations.PeelReward;
+            _game.DisplayBananaCount += Calculations.PeelReward;
         }
     }
 
-    public void CrazyCrit()
-    {
-        crazyCrit = true;
-
-        StartCoroutine(BackgroundGradient());
-    }
-
-    public void HandleUpgradeBought()
+    public void OnUpgradeBought(object sender, EventArgs args)
     {
         BananaClickValue = Calculations.BaseOnClickValue;
     }
 
-    IEnumerator BackgroundGradient()
+    private void OnPrestige(object sender, EventArgs args)
     {
-        float elapsedTime = 0f;
-        float colorTime = 0;
-        Color endColor = Color.red;
-
-        while (elapsedTime < crazyCritTimer)
-        {
-            elapsedTime += Time.deltaTime;
-            colorTime += Time.deltaTime * 1.15f;
-
-            Camera.main.backgroundColor = Color.Lerp(Camera.main.backgroundColor, endColor, Time.deltaTime * 1.15f);
-
-            if(colorTime > 0.95f)
-            {
-                colorTime = 0;
-                endColor = Random.ColorHSV();
-            }
-
-            yield return null;
-        }
-
-        crazyCrit = false;
-
-        elapsedTime = 0f;
-        while(elapsedTime < 1f)
-        {
-            elapsedTime += Time.deltaTime;
-
-            Camera.main.backgroundColor = Color.Lerp(Camera.main.backgroundColor, new Color(0.65f, 0.93f, 0.4f), Time.deltaTime);
-
-            yield return null;
-        }
+        BananaClickValue = new BucketNumber(1, 0);
     }
+
+
 }
